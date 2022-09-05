@@ -21,44 +21,62 @@
     <url>https://github.com/YunaiV/ruoyi-vue-pro</url>
 
     <dependencies>
-        <!-- TODO 芋艿：多模块 -->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-member-impl</artifactId>
+            <artifactId>yudao-module-member-biz</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-system-impl</artifactId>
+            <artifactId>yudao-module-system-biz</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-infra-impl</artifactId>
+            <artifactId>yudao-module-infra-biz</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-pay-impl</artifactId>
+            <artifactId>yudao-module-pay-biz</artifactId>
             <version>${revision}</version>
         </dependency>
-        <!-- 默认引入 yudao-module-bpm-impl-flowable 实现，可以替换为 yudao-module-bpm-impl-activiti 实现-->
         <dependency>
             <groupId>cn.iocoder.boot</groupId>
-            <artifactId>yudao-module-bpm-impl-flowable</artifactId>
+            <artifactId>yudao-module-market-biz</artifactId>
             <version>${revision}</version>
         </dependency>
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-module-product-biz</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <!-- 数据报表 -->
 <!--        <dependency>-->
 <!--            <groupId>cn.iocoder.boot</groupId>-->
-<!--            <artifactId>yudao-module-bpm-impl-activiti</artifactId>-->
+<!--            <artifactId>yudao-module-visualization-biz</artifactId>-->
 <!--            <version>${revision}</version>-->
 <!--        </dependency>-->
+        <!-- 工作流 -->
+<!--        <dependency>-->
+<!--            <groupId>cn.iocoder.boot</groupId>-->
+<!--            <artifactId>yudao-module-bpm-biz</artifactId>-->
+<!--            <version>${revision}</version>-->
+<!--        </dependency>-->
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-spring-boot-starter-biz-error-code</artifactId>
+        </dependency>
 
         <!-- spring boot 配置所需依赖 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>cn.iocoder.boot</groupId>
+            <artifactId>yudao-spring-boot-starter-banner</artifactId>
         </dependency>
 
         <!-- 服务保障相关 -->
@@ -77,7 +95,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>2.5.10</version> <!-- 如果 spring.boot.version 版本修改，则这里也要跟着修改 -->
+                <version>2.6.7</version> <!-- 如果 spring.boot.version 版本修改，则这里也要跟着修改 -->
                 <configuration>
                     <fork>true</fork>
                 </configuration>

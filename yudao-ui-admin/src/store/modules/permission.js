@@ -2,6 +2,7 @@ import { constantRoutes } from '@/router'
 import { getRouters } from '@/api/menu'
 import Layout from '@/layout/index'
 import ParentView from '@/components/ParentView';
+import { toCamelCase } from "@/utils";
 
 const permission = {
   state: {
@@ -53,8 +54,12 @@ function filterAsyncRouter(asyncRouterMap, lastRouter = false, type = false) {
     // 处理 meta 属性
     route.meta = {
       title: route.name,
-      icon: route.icon
+      icon: route.icon,
+      noCache: !route.keepAlive,
     }
+    // 路由地址转首字母大写驼峰，作为路由名称，适配keepAlive
+    route.name = toCamelCase(route.path, true)
+    route.hidden = !route.visible
     // 处理 component 属性
     if (route.children) { // 父节点
       if (route.parentId === 0) {

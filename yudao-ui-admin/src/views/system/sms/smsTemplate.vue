@@ -1,6 +1,6 @@
 <template>
   <div class="app-container">
-
+    <doc-alert title="短信配置" url="https://doc.iocoder.cn/sms/" />
     <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="150px">
       <el-form-item label="短信类型" prop="type">
@@ -28,9 +28,9 @@
                      :label="channel.signature + '【' + getDictDataLabel(DICT_TYPE.SYSTEM_SMS_CHANNEL_CODE, channel.code) + '】'" />
         </el-select>
       </el-form-item>
-      <el-form-item label="创建时间">
-        <el-date-picker v-model="dateRangeCreateTime" style="width: 240px" value-format="yyyy-MM-dd"
-                        type="daterange" range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" />
+      <el-form-item label="创建时间" prop="createTime">
+        <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
+                        range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
@@ -147,7 +147,7 @@
         <el-form-item label="手机号" prop="mobile">
           <el-input v-model="sendSmsForm.mobile" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item v-for="param in sendSmsForm.params" :label="'参数 {' + param + '}'" :prop="'templateParams.' + param">
+        <el-form-item v-for="param in sendSmsForm.params" :key="param" :label="'参数 {' + param + '}'" :prop="'templateParams.' + param">
           <el-input v-model="sendSmsForm.templateParams[param]" :placeholder="'请输入 ' + param + ' 参数'" />
         </el-form-item>
       </el-form>
@@ -183,7 +183,6 @@ export default {
       title: "",
       // 是否显示弹出层
       open: false,
-      dateRangeCreateTime: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
@@ -194,6 +193,7 @@ export default {
         content: null,
         apiTemplateId: null,
         channelId: null,
+        createTime: []
       },
       // 表单参数
       form: {},
@@ -232,11 +232,8 @@ export default {
     /** 查询列表 */
     getList() {
       this.loading = true;
-      // 处理查询参数
-      let params = {...this.queryParams};
-      this.addBeginAndEndTime(params, this.dateRangeCreateTime, 'createTime');
       // 执行查询
-      getSmsTemplatePage(params).then(response => {
+      getSmsTemplatePage(this.queryParams).then(response => {
         this.list = response.data.list;
         this.total = response.data.total;
         this.loading = false;
@@ -269,7 +266,6 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRangeCreateTime = [];
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -328,7 +324,6 @@ export default {
       let params = {...this.queryParams};
       params.pageNo = undefined;
       params.pageSize = undefined;
-      this.addBeginAndEndTime(params, this.dateRangeCreateTime, 'createTime');
       // 执行导出
       this.$modal.confirm('是否确认导出所有短信模板数据项?', "警告").then(() => {
         this.exportLoading = true;

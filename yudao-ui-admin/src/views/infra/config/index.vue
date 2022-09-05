@@ -1,5 +1,7 @@
 <template>
   <div class="app-container">
+    <doc-alert title="配置中心" url="https://doc.iocoder.cn/config-center/" />
+    <!-- 搜索工作栏 -->
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
       <el-form-item label="参数名称" prop="name">
         <el-input v-model="queryParams.name" placeholder="请输入参数名称" clearable style="width: 240px"
@@ -15,9 +17,9 @@
                      :label="dict.label" :value="parseInt(dict.value)"/>
         </el-select>
       </el-form-item>
-      <el-form-item label="创建时间">
-        <el-date-picker v-model="dateRange" style="width: 240px" value-format="yyyy-MM-dd" type="daterange"
-          range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" />
+      <el-form-item label="创建时间" prop="createTime">
+        <el-date-picker v-model="queryParams.createTime" style="width: 240px" value-format="yyyy-MM-dd HH:mm:ss" type="daterange"
+                        range-separator="-" start-placeholder="开始日期" end-placeholder="结束日期" :default-time="['00:00:00', '23:59:59']" />
       </el-form-item>
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
@@ -39,7 +41,7 @@
 
     <el-table v-loading="loading" :data="configList">
       <el-table-column label="参数主键" align="center" prop="id" />
-      <el-table-column label="参数分组" align="center" prop="group" />
+      <el-table-column label="参数分类" align="center" prop="group" />
       <el-table-column label="参数名称" align="center" prop="name" :show-overflow-tooltip="true" />
       <el-table-column label="参数键名" align="center" prop="key" :show-overflow-tooltip="true" />
       <el-table-column label="参数键值" align="center" prop="value" />
@@ -48,9 +50,9 @@
           <dict-tag :type="DICT_TYPE.INFRA_CONFIG_TYPE" :value="scope.row.type" />
         </template>
       </el-table-column>
-      <el-table-column label="是否敏感" align="center" prop="sensitive">
+      <el-table-column label="是否可见" align="center" prop="visible">
         <template slot-scope="scope">
-          <span>{{ scope.row.sensitive ? '是' : '否' }}</span>
+          <span>{{ scope.row.visible ? '是' : '否' }}</span>
         </template>
       </el-table-column>
       <el-table-column label="备注" align="center" prop="remark" :show-overflow-tooltip="true" />
@@ -74,8 +76,8 @@
     <!-- 添加或修改参数配置对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
       <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="参数分组" prop="group">
-          <el-input v-model="form.group" placeholder="请输入参数分组" />
+        <el-form-item label="参数分类" prop="category">
+          <el-input v-model="form.category" placeholder="请输入参数分类" />
         </el-form-item>
         <el-form-item label="参数名称" prop="name">
           <el-input v-model="form.name" placeholder="请输入参数名称" />
@@ -86,8 +88,8 @@
         <el-form-item label="参数键值" prop="value">
           <el-input v-model="form.value" placeholder="请输入参数键值" />
         </el-form-item>
-        <el-form-item label="是否敏感" prop="type">
-          <el-radio-group v-model="form.sensitive">
+        <el-form-item label="是否可见" prop="type">
+          <el-radio-group v-model="form.visible">
             <el-radio :key="true" :label="true">是</el-radio>
             <el-radio :key="false" :label="false">否</el-radio>
           </el-radio-group>
@@ -127,22 +129,21 @@ export default {
       open: false,
       // 类型数据字典
       typeOptions: [],
-      // 日期范围
-      dateRange: [],
       // 查询参数
       queryParams: {
         pageNo: 1,
         pageSize: 10,
         name: undefined,
         key: undefined,
-        type: undefined
+        type: undefined,
+        createTime: []
       },
       // 表单参数
       form: {},
       // 表单校验
       rules: {
-        group: [
-          { required: true, message: "参数分组不能为空", trigger: "blur" }
+        category: [
+          { required: true, message: "参数分类不能为空", trigger: "blur" }
         ],
         name: [
           { required: true, message: "参数名称不能为空", trigger: "blur" }
@@ -163,10 +164,7 @@ export default {
     /** 查询参数列表 */
     getList() {
       this.loading = true;
-      listConfig(this.addDateRange(this.queryParams, [
-        this.dateRange[0] ? this.dateRange[0] + ' 00:00:00' : undefined,
-        this.dateRange[1] ? this.dateRange[1] + ' 23:59:59' : undefined,
-      ])).then(response => {
+      listConfig(this.queryParams).then(response => {
           this.configList = response.data.list;
           this.total = response.data.total;
           this.loading = false;
@@ -196,7 +194,6 @@ export default {
     },
     /** 重置按钮操作 */
     resetQuery() {
-      this.dateRange = [];
       this.resetForm("queryForm");
       this.handleQuery();
     },
@@ -248,13 +245,13 @@ export default {
     },
     /** 导出按钮操作 */
     handleExport() {
-      const queryParams = this.addDateRange(this.queryParams, [
-        this.dateRange[0] ? this.dateRange[0] + ' 00:00:00' : undefined,
-        this.dateRange[1] ? this.dateRange[1] + ' 23:59:59' : undefined,
-      ]);
       this.$modal.confirm('是否确认导出所有参数数据项?').then(() => {
+          // 处理查询参数
+          let params = {...this.queryParams};
+          params.pageNo = undefined;
+          params.pageSize = undefined;
           this.exportLoading = true;
-          return exportConfig(queryParams);
+          return exportConfig(params);
         }).then(response => {
           this.$download.excel(response, '参数配置.xls');
           this.exportLoading = false;
