@@ -8,7 +8,7 @@ const props = defineProps({
     required: true
   },
   value: {
-    type: [String, Number] as PropType<string | number>,
+    type: [String, Number, Boolean] as PropType<string | number | boolean>,
     required: true
   }
 })
@@ -38,7 +38,7 @@ onUpdated(() => {
       dictData?.colorType === '' ||
       dictData?.colorType === undefined
     "
-    :key="dictData?.value"
+    :key="dictData?.value.toString()"
     :class="dictData?.cssClass"
   >
     {{ dictData?.label }}

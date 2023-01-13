@@ -7,6 +7,7 @@ import { useI18n } from '@/hooks/web/useI18n'
 import { useForm } from '@/hooks/web/useForm'
 import { findIndex } from '@/utils'
 import { cloneDeep } from 'lodash-es'
+import { FormSchema } from '@/types/form'
 
 const { t } = useI18n()
 
@@ -32,7 +33,11 @@ const props = defineProps({
   expand: propTypes.bool.def(false),
   // 伸缩的界限字段
   expandField: propTypes.string.def(''),
-  inline: propTypes.bool.def(true)
+  inline: propTypes.bool.def(true),
+  model: {
+    type: Object as PropType<Recordable>,
+    default: () => ({})
+  }
 })
 
 const emit = defineEmits(['search', 'reset'])
@@ -61,7 +66,9 @@ const newSchema = computed(() => {
   return schema
 })
 
-const { register, elFormRef, methods } = useForm()
+const { register, elFormRef, methods } = useForm({
+  model: props.model || {}
+})
 
 const search = async () => {
   await unref(elFormRef)?.validate(async (isValid) => {

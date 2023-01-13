@@ -1,10 +1,16 @@
+<template>
+  <Form :rules="rules" @register="register" />
+</template>
 <script setup lang="ts">
-import { PropType, reactive, watch } from 'vue'
-import { required } from '@/utils/formRules'
-import { CodegenTableVO } from '@/api/infra/codegen/types'
+import { onMounted, PropType, reactive, ref, watch } from 'vue'
 import { Form } from '@/components/Form'
 import { useForm } from '@/hooks/web/useForm'
+import { required } from '@/utils/formRules'
+import { handleTree, defaultProps } from '@/utils/tree'
 import { DICT_TYPE, getIntDictOptions } from '@/utils/dict'
+import { listSimpleMenusApi } from '@/api/system/menu'
+import { CodegenTableVO } from '@/api/infra/codegen/types'
+import { FormSchema } from '@/types/form'
 const props = defineProps({
   genInfo: {
     type: Object as PropType<Nullable<CodegenTableVO>>,
@@ -22,6 +28,11 @@ const rules = reactive({
 })
 const templateTypeOptions = getIntDictOptions(DICT_TYPE.INFRA_CODEGEN_TEMPLATE_TYPE)
 const sceneOptions = getIntDictOptions(DICT_TYPE.INFRA_CODEGEN_SCENE)
+const menuOptions = ref<any>([]) // 树形结构
+const getTree = async () => {
+  const res = await listSimpleMenusApi()
+  menuOptions.value = handleTree(res)
+}
 const schema = reactive<FormSchema[]>([
   {
     label: '生成模板',
@@ -84,7 +95,13 @@ const schema = reactive<FormSchema[]>([
   {
     label: '上级菜单',
     field: 'parentMenuId',
-    component: 'Input',
+    component: 'TreeSelect',
+    componentProps: {
+      data: menuOptions,
+      props: defaultProps,
+      checkStrictly: true,
+      nodeKey: 'id'
+    },
     labelMessage: '分配到指定菜单下，例如 系统管理',
     colProps: {
       span: 12
@@ -93,6 +110,11 @@ const schema = reactive<FormSchema[]>([
 ])
 const { register, methods, elFormRef } = useForm({
   schema
+})
+
+// ========== 初始化 ==========
+onMounted(async () => {
+  await getTree()
 })
 watch(
   () => props.genInfo,
@@ -106,12 +128,8 @@ watch(
     immediate: true
   }
 )
-
 defineExpose({
   elFormRef,
   getFormData: methods.getFormData
 })
 </script>
-<template>
-  <Form :rules="rules" @register="register" />
-</template>

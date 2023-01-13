@@ -1,9 +1,11 @@
 <script setup lang="ts">
+import dayjs from 'dayjs'
 import { ElCollapseTransition, ElDescriptions, ElDescriptionsItem, ElTooltip } from 'element-plus'
 import { useDesign } from '@/hooks/web/useDesign'
 import { propTypes } from '@/utils/propTypes'
-import { ref, unref, PropType, computed, useAttrs } from 'vue'
+import { ref, unref, PropType, computed, useAttrs, useSlots } from 'vue'
 import { useAppStore } from '@/store/modules/app'
+import { DescriptionsSchema } from '@/types/descriptions'
 
 const appStore = useAppStore()
 
@@ -11,10 +13,13 @@ const mobile = computed(() => appStore.getMobile)
 
 const attrs = useAttrs()
 
+const slots = useSlots()
+
 const props = defineProps({
   title: propTypes.string.def(''),
   message: propTypes.string.def(''),
   collapse: propTypes.bool.def(true),
+  columns: propTypes.number.def(1),
   schema: {
     type: Array as PropType<DescriptionsSchema[]>,
     default: () => []
@@ -90,14 +95,18 @@ const toggleClick = () => {
     <ElCollapseTransition>
       <div v-show="show" :class="[`${prefixCls}-content`, 'p-10px']">
         <ElDescriptions
-          :column="2"
+          :column="props.columns"
           border
           :direction="mobile ? 'vertical' : 'horizontal'"
           v-bind="getBindValue"
         >
+          <template v-if="slots['extra']" #extra>
+            <slot name="extra"></slot>
+          </template>
           <ElDescriptionsItem
             v-for="item in schema"
             :key="item.field"
+            min-width="80"
             v-bind="getBindItemValue(item)"
           >
             <template #label>
@@ -105,7 +114,15 @@ const toggleClick = () => {
             </template>
 
             <template #default>
-              <slot :name="item.field" :row="data">{{ data[item.field] }}</slot>
+              <slot v-if="item.dateFormat">
+                {{
+                  data[item.field] !== null ? dayjs(data[item.field]).format(item.dateFormat) : ''
+                }}
+              </slot>
+              <slot v-else-if="item.dictType">
+                <DictTag :type="item.dictType" :value="data[item.field] + ''" />
+              </slot>
+              <slot v-else :name="item.field" :row="data">{{ data[item.field] }}</slot>
             </template>
           </ElDescriptionsItem>
         </ElDescriptions>
@@ -114,10 +131,10 @@ const toggleClick = () => {
   </div>
 </template>
 
-<style lang="less" scoped>
-@prefix-cls: ~'@{namespace}-descriptions';
+<style lang="scss" scoped>
+$prefix-cls: #{$namespace}-descriptions;
 
-.@{prefix-cls}-header {
+.#{$prefix-cls}-header {
   &__title {
     &::after {
       position: absolute;
@@ -131,8 +148,8 @@ const toggleClick = () => {
   }
 }
 
-.@{prefix-cls}-content {
-  :deep(.@{elNamespace}-descriptions__cell) {
+.#{$prefix-cls}-content {
+  :deep(.#{$elNamespace}-descriptions__cell) {
     width: 0;
   }
 }

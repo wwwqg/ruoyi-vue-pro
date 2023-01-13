@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" name="Model">
 import { ref, unref } from 'vue'
 import dayjs from 'dayjs'
 import { ElTableColumn, ElTag, ElSwitch } from 'element-plus'
@@ -37,8 +37,6 @@ const setDialogTile = (type: string) => {
 // 新增操作
 const handleCreate = () => {
   setDialogTile('create')
-  // 重置表单
-  unref(formRef)?.getElFormRef()?.resetFields()
 }
 
 // 修改操作
@@ -51,23 +49,29 @@ const handleUpdate = async (row: ModelVO) => {
 
 // 提交按钮
 const submitForm = async () => {
-  actionLoading.value = true
-  // 提交请求
-  try {
-    const data = unref(formRef)?.formModel as ModelVO
-    if (actionType.value === 'create') {
-      await ModelApi.createModelApi(data)
-      message.success(t('common.createSuccess'))
-    } else {
-      await ModelApi.updateModelApi(data)
-      message.success(t('common.updateSuccess'))
+  const elForm = unref(formRef)?.getElFormRef()
+  if (!elForm) return
+  elForm.validate(async (valid) => {
+    if (valid) {
+      actionLoading.value = true
+      // 提交请求
+      try {
+        const data = unref(formRef)?.formModel as ModelVO
+        if (actionType.value === 'create') {
+          await ModelApi.createModelApi(data)
+          message.success(t('common.createSuccess'))
+        } else {
+          await ModelApi.updateModelApi(data)
+          message.success(t('common.updateSuccess'))
+        }
+        // 操作成功，重新加载列表
+        dialogVisible.value = false
+        await getList()
+      } finally {
+        actionLoading.value = false
+      }
     }
-    // 操作成功，重新加载列表
-    dialogVisible.value = false
-    await getList()
-  } finally {
-    actionLoading.value = false
-  }
+  })
 }
 
 /** 流程表单的详情按钮操作 */
@@ -88,12 +92,12 @@ const handleChangeState = async (row: ModelVO) => {
     .catch(() => {})
 }
 // ========== 详情相关 ==========
-const detailRef = ref() // 详情 Ref
+const detailData = ref() // 详情 Ref
 
 // 详情操作
 const handleDetail = async (row: ModelVO) => {
   // 设置数据
-  detailRef.value = row
+  detailData.value = row
   setDialogTile('detail')
 }
 
@@ -109,7 +113,7 @@ getList()
   <ContentWrap>
     <!-- 操作工具栏 -->
     <div class="mb-10px">
-      <el-button type="primary" v-hasPermi="['bpm:model:create']" @click="handleCreate">
+      <el-button type="primary" v-hasPermi="['bpm:model:create']" @click="handleCreate()">
         <Icon icon="ep:zoom-in" class="mr-5px" /> {{ t('action.add') }}
       </el-button>
     </div>
@@ -182,7 +186,7 @@ getList()
     </Table>
   </ContentWrap>
 
-  <Dialog v-model="dialogVisible" :title="dialogTitle">
+  <XModal v-model="dialogVisible" :title="dialogTitle">
     <!-- 对话框(添加 / 修改) -->
     <Form
       v-if="['create', 'update'].includes(actionType)"
@@ -194,23 +198,20 @@ getList()
     <Descriptions
       v-if="actionType === 'detail'"
       :schema="allSchemas.detailSchema"
-      :data="detailRef"
-    >
-      <template #createTime="{ row }">
-        <span>{{ dayjs(row.createTime).format('YYYY-MM-DD HH:mm:ss') }}</span>
-      </template>
-    </Descriptions>
+      :data="detailData"
+    />
     <!-- 操作按钮 -->
     <template #footer>
-      <el-button
+      <!-- 按钮：保存 -->
+      <XButton
         v-if="['create', 'update'].includes(actionType)"
         type="primary"
+        :title="t('action.save')"
         :loading="actionLoading"
-        @click="submitForm"
-      >
-        {{ t('action.save') }}
-      </el-button>
-      <el-button @click="dialogVisible = false">{{ t('dialog.close') }}</el-button>
+        @click="submitForm()"
+      />
+      <!-- 按钮：关闭 -->
+      <XButton :loading="actionLoading" :title="t('dialog.close')" @click="dialogVisible = false" />
     </template>
-  </Dialog>
+  </XModal>
 </template>
